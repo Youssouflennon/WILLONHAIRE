@@ -2,8 +2,10 @@
 import 'dart:convert';
 
 import 'package:admin/color_constants.dart';
+import 'package:admin/main.dart';
 import 'package:awesome_snackbar_content/awesome_snackbar_content.dart';
 import 'package:flutter/material.dart';
+import 'package:hive/hive.dart';
 import 'package:motion_toast/motion_toast.dart';
 import 'package:page_transition/page_transition.dart';
 //import 'package:page_transition/page_transition.dart';
@@ -38,6 +40,7 @@ class _LoginState extends State<Login> with SingleTickerProviderStateMixin {
   bool _obscureText = true;
   bool isSigninLoading = false;
   bool isSignupLoading = false;
+  final box = Hive.box("myBox");
 
   bool isChecked = false;
 
@@ -56,7 +59,7 @@ class _LoginState extends State<Login> with SingleTickerProviderStateMixin {
     _animationController?.dispose();
     super.dispose();
   }
-  var server = "http://192.168.16.116:3000";
+
   TextEditingController firstNameController = TextEditingController();
   TextEditingController lastNameController = TextEditingController();
   TextEditingController emailController = TextEditingController();
@@ -148,73 +151,76 @@ class _LoginState extends State<Login> with SingleTickerProviderStateMixin {
     );
   }
    
-   authentificat()async{
-    var headers = {
-  'Content-Type': 'application/json'
-};
-var request = http.Request('POST', Uri.parse('http://192.168.16.116:3000/api/v1/auth/authenticate'));
-request.body = json.encode({
-  "email": emailController.text,
-  "password": passwordController.text,
-});
-request.headers.addAll(headers);
+   authenticate()async{
+    var errorMessage;
+     var headers = {
+       'Content-Type': 'application/json'
+     };
+     var request = http.Request('POST', Uri.parse('${Domain.serverPort}/api/v1/auth/authenticate'));
+     request.body = json.encode({
+       "email": emailController.text,
+       "password": passwordController.text,
+     });
+     request.headers.addAll(headers);
 
-http.StreamedResponse response = await request.send();
+     http.StreamedResponse response = await request.send();
 
-if (response.statusCode == 200) {
-  print(await response.stream.bytesToString());
-   setState(() {
-        isSigninLoading = false;
-      });
-      final snackBar = SnackBar(
-                    elevation: 0,
-                    behavior: SnackBarBehavior.floating,
-                    backgroundColor: Colors.transparent,
-                    content: AwesomeSnackbarContent(
-                      title: 'Succès',
-                      message:
-                      'Bienvenue M/Mme ${emailController.text}',
-                      contentType: ContentType.success,
-                    ),
-                  );
-                  ScaffoldMessenger.of(context)
-                    ..hideCurrentSnackBar()
-                    ..showSnackBar(snackBar);
-                      Navigator.push(
-                    context,
-                    PageTransition(type: PageTransitionType.fade,duration: const Duration(milliseconds: 500),
-                        child: MainScreen()),
-                  );
-}
-else {
-    final error = await response.stream.bytesToString();
-      var errorMessage = json.decode(error)["error"];
+     if (response.statusCode == 200) {
+       var details = await response.stream.bytesToString();
        setState(() {
-        isSigninLoading=false;
-      });
- final snackBar = SnackBar(
-                    elevation: 0,
-                    behavior: SnackBarBehavior.floating,
-                    backgroundColor: Colors.transparent,
-                    content: AwesomeSnackbarContent(
-                      title: 'Echec Authentification',
-                      message: errorMessage,
-                      contentType: ContentType.failure,
-                    ),
-                  );
-                  ScaffoldMessenger.of(context)
-                    ..hideCurrentSnackBar()
-                    ..showSnackBar(snackBar);
-     
-}
+         isSigninLoading = false;
+       });
+       final snackBar = SnackBar(
+         elevation: 0,
+         behavior: SnackBarBehavior.floating,
+         backgroundColor: Colors.transparent,
+         content: AwesomeSnackbarContent(
+           title: 'Succès',
+           message:
+           'Bienvenue M/Mme ${emailController.text}',
+           contentType: ContentType.success,
+         ),
+       );
+       ScaffoldMessenger.of(context)
+         ..hideCurrentSnackBar()
+         ..showSnackBar(snackBar);
+       box.put("userDto", details);
+       Navigator.push(
+         context,
+         PageTransition(type: PageTransitionType.fade,duration: const Duration(milliseconds: 500),
+             child: MainScreen()),
+       );
+     }
+     else {
+       final error = await response.stream.bytesToString();
+       if(response.statusCode != 403) {
+         errorMessage = json.decode(error)["error"];
+       }
+       setState(() {
+         isSigninLoading=false;
+       });
+       final snackBar = SnackBar(
+         elevation: 0,
+         behavior: SnackBarBehavior.floating,
+         backgroundColor: Colors.transparent,
+         content: AwesomeSnackbarContent(
+           title: 'Echec Authentification',
+           message: response.statusCode != 403 ? "Forbiden" : errorMessage,
+           contentType: ContentType.failure,
+         ),
+       );
+       ScaffoldMessenger.of(context)
+         ..hideCurrentSnackBar()
+         ..showSnackBar(snackBar);
 
+     }
    }
 
    registerUser()async{
     var headers = {
       'Content-Type': 'application/json'
     };
-    var request = http.Request('POST', Uri.parse('$server/api/v1/auth/register'));
+    var request = http.Request('POST', Uri.parse('${Domain.serverPort}/api/v1/auth/register'));
     request.body = json.encode({
       "firstname": firstNameController.text,
       "lastname": lastNameController.text,
@@ -228,47 +234,48 @@ else {
     http.StreamedResponse response = await request.send();
 
     if (response.statusCode == 200) {
-      print(await response.stream.bytesToString());
+      final details = await response.stream.bytesToString();
   
       setState(() {
         isSigninLoading = false;
       });
       final snackBar = SnackBar(
-                    elevation: 0,
-                    behavior: SnackBarBehavior.floating,
-                    backgroundColor: Colors.transparent,
-                    content: AwesomeSnackbarContent(
-                      title: 'Succès',
-                      message:
-                      'Bienvenue M/Mme $firstNameController $lastNameController',
-                      contentType: ContentType.success,
-                    ),
-                  );
-                  ScaffoldMessenger.of(context)
-                    ..hideCurrentSnackBar()
-                    ..showSnackBar(snackBar);
-                      Navigator.push(
-                    context,
-                    PageTransition(type: PageTransitionType.fade,duration: const Duration(milliseconds: 500),
-                        child: MainScreen()),
-                  );
+        elevation: 0,
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: Colors.transparent,
+        content: AwesomeSnackbarContent(
+          title: 'Succès',
+          message:
+          'Bienvenue M/Mme $firstNameController $lastNameController',
+          contentType: ContentType.success,
+        ),
+      );
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(snackBar);
+      box.put("userDto", details);
+          Navigator.push(
+        context,
+        PageTransition(type: PageTransitionType.fade,duration: const Duration(milliseconds: 500),
+            child: MainScreen()),
+      );
     }
     else {
       final error = await response.stream.bytesToString();
       var errorMessage = json.decode(error)["error"];
- final snackBar = SnackBar(
-                    elevation: 0,
-                    behavior: SnackBarBehavior.floating,
-                    backgroundColor: Colors.transparent,
-                    content: AwesomeSnackbarContent(
-                      title: 'echec',
-                      message: errorMessage,
-                      contentType: ContentType.failure,
-                    ),
-                  );
-                  ScaffoldMessenger.of(context)
-                    ..hideCurrentSnackBar()
-                    ..showSnackBar(snackBar);
+      final snackBar = SnackBar(
+        elevation: 0,
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: Colors.transparent,
+        content: AwesomeSnackbarContent(
+          title: 'echec',
+          message: errorMessage,
+          contentType: ContentType.failure,
+        ),
+      );
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(snackBar);
       setState(() {
         isSigninLoading=false;
       });
@@ -509,11 +516,14 @@ else {
                   if (loginFormKey.currentState!.validate()) {
                     setState(() {
                       isSigninLoading = true;
-                     authentificat();
+                     //authenticate();
                     });
                   }
-                  
-                
+                  Navigator.push(
+                    context,
+                    PageTransition(type: PageTransitionType.fade,duration: const Duration(milliseconds: 500),
+                        child: MainScreen()),
+                  );
                 },
               ),
               SizedBox(height: 24.0),

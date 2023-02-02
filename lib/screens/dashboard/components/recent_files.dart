@@ -131,68 +131,6 @@ DataRow recentFileDataRow(ListAppointmentsState fileInfo, BuildContext context) 
           ],
         )
       ),
-        /*DataCell(
-          TextButton(
-            child: Text('View', style: TextStyle(color: greenColor)),
-            onPressed: () {
-              showDialog(
-                  context: context,
-                  builder: (_) {
-                    return AlertDialog(
-                        title: Center(
-                          child: Column(
-                            children: [
-                              Icon(Icons.warning_outlined,
-                                  size: 36, color: Colors.red),
-                              SizedBox(height: 20),
-                              Text("Confirm Deletion", style: TextStyle(color: Color(0xFF032252))),
-                            ],
-                          ),
-                        ),
-                        content: Container(
-                          //color: Palette.background,
-                          height: 70,
-                          child: Column(
-                            children: [
-                              Text(
-                                  "Are you sure want to delete?", style: TextStyle(color: Color(0xFF032252))),
-                              SizedBox(
-                                height: 16,
-                              ),
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  ElevatedButton.icon(
-                                      icon: Icon(
-                                        Icons.close,
-                                        size: 14,
-                                      ),
-                                      style: ElevatedButton.styleFrom(
-                                          primary: Colors.grey),
-                                      onPressed: () {
-                                        Navigator.of(context).pop();
-                                      },
-                                      label: Text("Cancel")),
-                                  SizedBox(
-                                    width: 20,
-                                  ),
-                                  ElevatedButton.icon(
-                                      icon: Icon(
-                                        Icons.delete,
-                                        size: 14,
-                                      ),
-                                      style: ElevatedButton.styleFrom(
-                                          primary: Colors.red),
-                                      onPressed: () {},
-                                      label: Text("Delete"))
-                                ],
-                              )
-                            ],
-                          ),
-                        ));
-                  });
-            },
-          ),),*/
     ],
   );
 }

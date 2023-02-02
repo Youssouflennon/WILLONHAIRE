@@ -1,4 +1,7 @@
+import 'dart:convert';
+
 import 'package:admin/controllers/animatonFadeIn.dart';
+import 'package:admin/main.dart';
 import 'package:admin/models/Settings/Services.dart';
 import 'package:admin/models/Settings/employee.dart';
 import 'package:admin/models/Settings/location.dart';
@@ -28,6 +31,7 @@ class ReglagesState extends State<Reglages>{
   int currentState = 0;
   int otherState = 0;
   int points = 10;
+  bool isLoading = false;
   TextEditingController bonusController = TextEditingController();
 
   @override
@@ -283,9 +287,10 @@ class ReglagesState extends State<Reglages>{
                   onTap: (){                                      
                     if(bonusController.text.isNotEmpty){
                       setState(() {
+                        isLoading = true;
                         points = int.parse(bonusController.text);
                       });
-                        putBonusFidel();
+                        putBonusFidel(bonusController.text);
                     }
                   },
                   child: Container(
@@ -295,7 +300,15 @@ class ReglagesState extends State<Reglages>{
                       color: validateColor,
                       borderRadius: BorderRadius.all(Radius.circular(5)),
                     ),
-                    child: Center(child: Text("ENREGISTRER", style: TextStyle(color: Colors.white, letterSpacing: 2, fontSize: 15))),
+                    child: Center(
+                        child: isLoading ? SizedBox(
+                      width: 30,
+                          height: 30,
+                          child: CircularProgressIndicator(
+                            color: primaryColor,
+                            backgroundColor: primaryColor.withOpacity(0.2),
+                          ),
+                    ) : Text("ENREGISTRER", style: TextStyle(color: Colors.white, letterSpacing: 2, fontSize: 15))),
                   ),
                 ),
                 SizedBox(width: 10),
@@ -321,57 +334,62 @@ class ReglagesState extends State<Reglages>{
     );
   }
   
-   putBonusFidel()async {
+   putBonusFidel(String bonus)async {
 
-    var headers = {
-  'Content-Type': 'application/json'
-};
-var request = http.Request('PUT', Uri.parse('http://192.168.16.116:3000/api/settings/fidelity-card/points-to-bonus?value=element'));
+     var headers = {
+       'Content-Type': 'application/json'
+     };
+     var request = http.Request('PUT', Uri.parse('${Domain.serverPort}/api/settings/fidelity-card/points-to-bonus?value=$bonus'));
 
-request.headers.addAll(headers);
+     request.headers.addAll(headers);
 
-http.StreamedResponse response = await request.send();
+     http.StreamedResponse response = await request.send();
 
-if (response.statusCode == 200) {
-  print(await response.stream.bytesToString());
-    final snackBar = SnackBar(
-      elevation: 2,
-      behavior: SnackBarBehavior.floating,
-      backgroundColor: Colors.transparent,
-      content: AwesomeSnackbarContent(
-        title: 'Succès',
-        message:
-        'Nombre de points Modifié avec succès!',
-        contentType: ContentType.success,
-      ),
-    );
-    
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(snackBar);
-        bonusController.clear();
-                    
-}
-else {
-  print(response.reasonPhrase);
-  final snackBar = SnackBar(
-      elevation: 2,
-      behavior: SnackBarBehavior.floating,
-      backgroundColor: Colors.transparent,
-      content: AwesomeSnackbarContent(
-        title: 'Echec',
-        message:
-        'OUPSS!',
-        contentType: ContentType.failure,
-      ),
-    );
-    
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(snackBar);
-}
+     if (response.statusCode == 200) {
+       //print(await response.stream.bytesToString());
+       setState(() {
+         isLoading = false;
+       });
+       final snackBar = SnackBar(
+         elevation: 2,
+         behavior: SnackBarBehavior.floating,
+         backgroundColor: Colors.transparent,
+         content: AwesomeSnackbarContent(
+           title: 'Succès',
+           message:
+           'Nombre de points Modifié avec succès!',
+           contentType: ContentType.success,
+         ),
+       );
 
-    
+       ScaffoldMessenger.of(context)
+         ..hideCurrentSnackBar()
+         ..showSnackBar(snackBar);
+       bonusController.clear();
+
+     }
+     else {
+       final error = await response.stream.bytesToString();
+       var errorMessage = json.decode(error);
+       setState(() {
+         isLoading = false;
+       });
+       final snackBar = SnackBar(
+         elevation: 2,
+         behavior: SnackBarBehavior.floating,
+         backgroundColor: Colors.transparent,
+         content: AwesomeSnackbarContent(
+           title: 'Echec',
+           message:
+           'OUPS! $errorMessage',
+           contentType: ContentType.failure,
+         ),
+       );
+
+       ScaffoldMessenger.of(context)
+         ..hideCurrentSnackBar()
+         ..showSnackBar(snackBar);
+     }
    }
 }
 

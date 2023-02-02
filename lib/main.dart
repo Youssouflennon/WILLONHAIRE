@@ -26,7 +26,7 @@ void main() async{
 }
 
 class Domain{
-  static var shinTheoPort = "http://saas24.shintheo.com:7000/";
+  static var serverPort = "http://192.168.16.105:3000";
 }
 
 class MyApp extends StatelessWidget {

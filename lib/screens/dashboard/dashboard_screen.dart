@@ -1,5 +1,8 @@
+import 'dart:convert';
+
 import 'package:admin/screens/dashboard/components/my_fields.dart';
 import 'package:flutter/material.dart';
+import 'package:hive/hive.dart';
 
 import '../../constants.dart';
 import 'components/header.dart';
@@ -17,6 +20,12 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class DashboardScreenState extends State<DashboardScreen> {
+
+  @override
+  void initState() {
+    super.initState();
+    //initializePage();
+  }
 
   Widget build(BuildContext context) {
     return SafeArea(

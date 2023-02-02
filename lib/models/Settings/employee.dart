@@ -1,11 +1,13 @@
+
 import 'dart:convert';
 
 import 'package:admin/controllers/animatonFadeIn.dart';
+import 'package:admin/main.dart';
 import 'package:data_table_2/data_table_2.dart';
 import 'package:dropdown_button2/dropdown_button2.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:simple_fontellico_progress_dialog/simple_fontico_loading.dart';
+import 'package:hive/hive.dart';
 
 import '../../color_constants.dart';
 import '../../responsive.dart';
@@ -43,6 +45,7 @@ class EmployeeState extends State<Employee>{
   bool isListView = false;
   List employes=[];
   bool isLoadind = true;
+  final box = Hive.box("myBox");
 
 
 @override
@@ -51,37 +54,35 @@ class EmployeeState extends State<Employee>{
   }
 
   initializePage()async{
-    getAllEmpol();
-    employes = await getAllEmpol();
-    print(employes);
+
+    getAllEmployees();
+    employes = await getAllEmployees();
   }
- Future getAllEmpol()async{
-    var headers = {
-  'Content-Type': 'application/json'
-};
-var request = http.Request('GET', Uri.parse('http://192.168.16.116:3000/api/v1/employees'));
 
-request.headers.addAll(headers);
+ Future getAllEmployees()async{
+   var headers = {
+     'Content-Type': 'application/json'
+   };
+   var request = http.Request('GET', Uri.parse('${Domain.serverPort}/api/v1/employees'));
 
-http.StreamedResponse response = await request.send();
+   request.headers.addAll(headers);
 
-if (response.statusCode == 200) {
-  setState(() {
-    isLoadind = false;
-  });
- print(await response.stream.bytesToString());
-//final data=await response.stream.bytesToString();
-//return data;
+   http.StreamedResponse response = await request.send();
 
-
-}
-else {
-  setState(() {
-    isLoadind = false;
-  });
-  print(response.reasonPhrase);
-}
-
+   if (response.statusCode == 200) {
+     setState(() {
+       isLoadind = false;
+     });
+     //print(await response.stream.bytesToString());
+     var allEmployees = await response.stream.bytesToString();
+     return json.decode(allEmployees);
+   }
+   else {
+     setState(() {
+       isLoadind = false;
+     });
+     print(response.reasonPhrase);
+   }
   }
 
   @override
@@ -111,7 +112,7 @@ else {
                   radius: 30,
                   backgroundColor: background,
                   child: Center(
-                    child: Text("2"),
+                    child: Text(employes.length.toString()),
                   ),
                 ),
                 SizedBox(width: 10),
@@ -334,7 +335,7 @@ else {
               child: GridView.builder(
                   itemCount: employes.length,
                   gridDelegate:  SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: Responsive.isDesktop(context) ? 3 : 2, mainAxisExtent: 150.0, crossAxisSpacing: 15.0, mainAxisSpacing: 15.0),
+                      crossAxisCount: Responsive.isDesktop(context) ? 3 : 2, mainAxisExtent: 160.0, crossAxisSpacing: 15.0, mainAxisSpacing: 15.0),
                   itemBuilder: (context, index) {
                     //articles?.sort((a, b) => b.date.compareTo(a.date));
                     return InkWell(
@@ -345,6 +346,7 @@ else {
                               return EmployeeDrawer();
                             },
                           );
+                          box.put("employeeId", employes[index]["id"]);
                         },
                         child: Container(
                             padding: EdgeInsets.all(20),
@@ -364,7 +366,7 @@ else {
                                 Align(
                                     alignment: Alignment.topRight,
                                     child: Container(
-                                        padding: EdgeInsets.all(5),
+                                        padding: EdgeInsets.only(top: 5, bottom: 5, right: 10, left: 10),
                                         decoration: BoxDecoration(
                                             color: Colors.green.withOpacity(0.2),
                                             borderRadius: BorderRadius.all(Radius.circular(30))
@@ -380,7 +382,8 @@ else {
                                       decoration: BoxDecoration(
                                           shape: BoxShape.circle,
                                           image: DecorationImage(
-                                              image: AssetImage(employes[index]["pictureFullPath"]), fit: BoxFit.fill
+                                            image: AssetImage('assets/images/photo_2022-11-23_04-40-34.jpg'), fit: BoxFit.fill
+                                              //image: AssetImage(employes[index]["pictureFullPath"]), fit: BoxFit.fill
                                           )
                                       ),
                                     ),
@@ -389,7 +392,7 @@ else {
                                       mainAxisAlignment: MainAxisAlignment.center,
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
-                                        Text("${employes[index]["firstName"]} ${employes[index]["lastName"]}", style: TextStyle(color: appColor, fontSize: 20)),
+                                        Text("${employes[index]["firstName"].toUpperCase()} ${employes[index]["lastName"]}", style: TextStyle(color: appColor, fontSize: 20)),
                                         Text(employes[index]["email"], style: TextStyle(color: Colors.grey, fontSize: 15)),
                                         Text(employes[index]["phone"], style: TextStyle(color: Colors.grey, fontSize: 15)),
                                       ],
@@ -427,8 +430,47 @@ else {
                   ),
                 ],
                 rows: List.generate(
-                  5,
-                      (index) => employee(context),
+                  employes.length,
+                      (index) => DataRow(
+                          onSelectChanged: (_){
+                            showDialog(
+                              context: context,
+                              builder: (_) {
+                                return EmployeeDrawer();
+                              },
+                            );
+                          },
+                          cells: [
+                            DataCell(
+                                Row(
+                                  children: [
+                                    Container(
+                                        width: 50,
+                                        height: 50,
+                                        decoration: BoxDecoration(
+                                            shape: BoxShape.circle,
+                                            color: Colors.blue,
+                                            image: DecorationImage(
+                                                image: AssetImage("assets/images/photo_2022-11-23_04-40-50.jpg"), fit: BoxFit.fill))),
+                                    SizedBox(width: 5),
+                                    Text("${employes[index]["firstName"].toUpperCase()} ${employes[index]["lastName"]}", style: TextStyle(color: Color(0xFF032252), fontSize: 15))
+                                  ],
+                                )
+                            ),
+                            DataCell(Text(employes[index]["email"], style: TextStyle(color: Color(0xFF032252), fontSize: 15))),
+                            DataCell(Text(employes[index]["phone"], style: TextStyle(color: Color(0xFF032252), fontSize: 15))),
+                            DataCell(
+                                Container(
+                                    padding: EdgeInsets.all(10),
+                                    decoration: BoxDecoration(
+                                        color: Colors.green.withOpacity(0.2),
+                                        borderRadius: BorderRadius.all(Radius.circular(30))
+                                    ),
+                                    child: Text(employes[index]["status"], style: TextStyle(color: validateColor, fontWeight: FontWeight.bold))
+                                )
+                            ),
+                          ]
+                      )
                 ),
               ),
             ),
@@ -462,46 +504,4 @@ else {
       ),
     );
   }
-}
-DataRow employee(BuildContext context){
-  return DataRow(
-    onSelectChanged: (_){
-      showDialog(
-        context: context,
-        builder: (_) {
-          return EmployeeDrawer();
-        },
-      );
-    },
-      cells: [
-        DataCell(
-          Row(
-            children: [
-              Container(
-                  width: 50,
-                  height: 50,
-                  decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Colors.blue,
-                      image: DecorationImage(
-                          image: AssetImage("assets/images/photo_2022-11-23_04-40-50.jpg"), fit: BoxFit.fill))),
-              SizedBox(width: 5),
-              Text("Rio Saeba", style: TextStyle(color: Color(0xFF032252), fontSize: 15))
-            ],
-          )
-        ),
-        DataCell(Text("saeba.rio@gmail.com", style: TextStyle(color: Color(0xFF032252), fontSize: 15))),
-        DataCell(Text("+32 6578695760", style: TextStyle(color: Color(0xFF032252), fontSize: 15))),
-        DataCell(
-            Container(
-                padding: EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                    color: Colors.green.withOpacity(0.2),
-                    borderRadius: BorderRadius.all(Radius.circular(30))
-                ),
-                child: Text("Available", style: TextStyle(color: validateColor, fontWeight: FontWeight.bold))
-            )
-        ),
-      ]
-  );
 }

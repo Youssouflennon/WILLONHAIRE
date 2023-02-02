@@ -1,7 +1,10 @@
+import 'dart:convert';
+
 import 'package:admin/responsive.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:focused_menu/modals.dart';
+import 'package:hive/hive.dart';
 import 'package:page_transition/page_transition.dart';
 import 'package:focused_menu/focused_menu.dart';
 
@@ -9,10 +12,44 @@ import '../../../Drawer_Menu/drawer_menu.dart';
 import '../../../color_constants.dart';
 import '../../login/login_screen.dart';
 
-class Header extends StatelessWidget {
+class Header extends StatefulWidget {
   const Header({
     Key? key,
   }) : super(key: key);
+
+  @override
+  State<Header> createState() => HeaderState();
+
+}
+
+class HeaderState extends State<Header> {
+
+  final box = Hive.box("myBox");
+  String firstName = "";
+  String lastName = "";
+  String email = "";
+  String type = "";
+  String phone = "";
+  String gender = "";
+
+  @override
+  void initState() {
+    super.initState();
+    initializePage();
+  }
+
+
+  initializePage()async{
+    if(box.get("userDto") != null){
+      final userDto = box.get("userDto");
+      firstName = json.decode(userDto)["user"]["firstName"];
+      lastName = json.decode(userDto)["user"]["lastName"];
+      email = json.decode(userDto)["user"]["email"];
+      type = json.decode(userDto)["user"]["type"];
+      phone = json.decode(userDto)["user"]["phone"];
+      gender = json.decode(userDto)["user"]["gender"];
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -50,7 +87,7 @@ class Header extends StatelessWidget {
           child: RichText(
             text: TextSpan(
               children: [
-                TextSpan(text: "Bonjour Le-Fikish 👋🏼",
+                TextSpan(text: gender == "MALE" ? "Bonjour M. $firstName $lastName 👋🏼" : "Bonjour Mme. $firstName $lastName 👋🏼",
                   style: TextStyle(color: appColor, fontSize: 30)),
                 TextSpan(text: "\nVous avez ✅ 0 rendez-vous approuvés et ⏰ 0 rendez-vous en attente pour aujourd'hui",
                     style: TextStyle(color: appColor, fontSize: 15)),
@@ -64,10 +101,43 @@ class Header extends StatelessWidget {
   }
 }
 
-class ProfileCard extends StatelessWidget {
+class ProfileCard extends StatefulWidget {
   const ProfileCard({
     Key? key,
   }) : super(key: key);
+
+  @override
+  State<ProfileCard> createState() => ProfileCardState();
+
+}
+
+class ProfileCardState extends State<ProfileCard> {
+
+  @override
+  void initState() {
+    super.initState();
+    initializePage();
+  }
+
+  final box = Hive.box("myBox");
+  String firstName = "";
+  String lastName = "";
+  String email = "";
+  String type = "";
+  String phone = "";
+  String gender = "";
+
+  initializePage()async{
+    if(box.get("userDto") != null){
+      final userDto = box.get("userDto");
+      firstName = json.decode(userDto)["user"]["firstName"];
+      lastName = json.decode(userDto)["user"]["lastName"];
+      email = json.decode(userDto)["user"]["email"];
+      type = json.decode(userDto)["user"]["type"];
+      phone = json.decode(userDto)["user"]["phone"];
+      gender = json.decode(userDto)["user"]["gender"];
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -105,7 +175,7 @@ class ProfileCard extends StatelessWidget {
                     Padding(
                       padding:
                       EdgeInsets.symmetric(horizontal: defaultPadding / 2),
-                      child: Text("Ngouanet Friedrich", style: TextStyle(color: appColor, fontSize: 20)),
+                      child: Text("$firstName $lastName", style: TextStyle(color: appColor, fontSize: 20)),
                     ),
                     if (!Responsive.isMobile(context))
                       Padding(
@@ -114,7 +184,7 @@ class ProfileCard extends StatelessWidget {
                           child: Row(
                             children: [
                               Icon(Icons.person_sharp, color: appColor, size: 15,),
-                              Text(" Developer", style: TextStyle(color: appColor, fontSize: 10),
+                              Text(" $type", style: TextStyle(color: appColor, fontSize: 15),
                               ),
                             ],
                           )),
@@ -125,7 +195,7 @@ class ProfileCard extends StatelessWidget {
                           child: Row(
                             children: [
                               Icon(Icons.mail_rounded, color: appColor, size: 15,),
-                              Text(" mikengouanet@gmail.com", style: TextStyle(color: appColor, fontSize: 10),
+                              Text(" $email", style: TextStyle(color: appColor, fontSize: 13),
                               ),
                             ],
                           )),
@@ -135,8 +205,8 @@ class ProfileCard extends StatelessWidget {
                           EdgeInsets.symmetric(horizontal: defaultPadding / 2),
                           child: Row(
                             children: [
-                              Icon(Icons.location_pin, color: Color(0xFFFF160E), size: 10,),
-                              Text(" Yaounde, Omnisport", style: TextStyle(color: appColor, fontSize: 10),
+                              Icon(Icons.phone_android_outlined, color: Color(0xFFFF160E), size: 13),
+                              Text(" $phone", style: TextStyle(color: appColor, fontSize: 15),
                               ),
                             ],
                           )),
